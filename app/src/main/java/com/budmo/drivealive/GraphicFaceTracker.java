@@ -14,18 +14,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GraphicFaceTracker extends Tracker<Face> {
     private static final String TAG = "FaceTracker";
     private static final double ONE_EYE_CLOSED_THRESHOLD = 0.4;
-    private static final double BOTH_EYES_CLOSED_THRESHOLD = 0.6;
-    private static int SLEEPY_FRAMES = 0;
-    private static int BLINKING_FRAMES = 180;
+    private static final double BOTH_EYES_CLOSED_THRESHOLD = 1.2;
 
     private static AtomicInteger faceNumber = new AtomicInteger(0);
 
     private GraphicOverlay mOverlay;
     private FaceGraphic mFaceGraphic;
     private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME);
-    private float leftEyeOpened;
-    private float rightEyeOpened;
     private int faceId;
+    private int sleepyFrames = 0;
+    private int totalFrames = 0;
+    private long startTime;
 
     GraphicFaceTracker(GraphicOverlay overlay) {
         mOverlay = overlay;
@@ -42,29 +41,36 @@ public class GraphicFaceTracker extends Tracker<Face> {
 
     @Override
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
+        if (totalFrames == 0) {
+            startTime = System.currentTimeMillis();
+        }
+        
+        totalFrames++;
+        if (totalFrames % 100 == 0) {
+            double totalTimeInSeconds = (System.currentTimeMillis() - startTime) / 1000.0;
+            Log.i(TAG, "FRAMES PER SECOND: " + (totalFrames / totalTimeInSeconds));
+        }
+
         mOverlay.add(mFaceGraphic);
         boolean oneFaceOnly = faceNumber.get() == 1;
         if (oneFaceOnly) {
-            leftEyeOpened = face.getIsLeftEyeOpenProbability();
-            rightEyeOpened = face.getIsRightEyeOpenProbability();
+            float leftEyeOpened = face.getIsLeftEyeOpenProbability();
+            float rightEyeOpened = face.getIsRightEyeOpenProbability();
+
+            if (totalFrames % 10 == 0) {
+                Log.i(TAG, "PROBABILITY OF OPEN EYES: " + leftEyeOpened + " " + rightEyeOpened);
+            }
+
             if ((leftEyeOpened < ONE_EYE_CLOSED_THRESHOLD && rightEyeOpened < ONE_EYE_CLOSED_THRESHOLD) || (leftEyeOpened + rightEyeOpened < BOTH_EYES_CLOSED_THRESHOLD)) {
-                SLEEPY_FRAMES++;
-                BLINKING_FRAMES -= 180;
-                if (SLEEPY_FRAMES > 3) {
+                sleepyFrames++;
+                if (sleepyFrames > 3) {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
                     mFaceGraphic.updateFaceFrame(face, false);
-                }
-                if (BLINKING_FRAMES < 150) {
-                    // TODO: show notification
-                    toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
-                    mFaceGraphic.updateFaceFrame(face, false);
+                    Log.w(TAG, "SLEEPY FRAMES: " + sleepyFrames);
                 }
             } else {
                 mFaceGraphic.updateFaceFrame(face, true);
-                SLEEPY_FRAMES = 0;
-                if (BLINKING_FRAMES < 180) {
-                    BLINKING_FRAMES++;
-                }
+                sleepyFrames = 0;
             }
         } else {
             mFaceGraphic.updateFaceFrame(face, false);
