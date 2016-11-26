@@ -21,7 +21,7 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     private Paint mPaint;
 
     private volatile Face mFace;
-    private int mFaceId;
+
     private boolean mIsReady = false;
     private final String mNotReadyMessage;
     private final String mReadyMessage;
@@ -31,25 +31,14 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         mNotReadyMessage = overlay.getContext().getResources().getString(R.string.not_ready_message);
         mReadyMessage = overlay.getContext().getResources().getString(R.string.ready_message);
         mPaint = new Paint();
-        mPaint.setColor(INVALID_COLOR);
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeWidth(BOX_STROKE_WIDTH);
         mPaint.setTextSize(ID_TEXT_SIZE);
     }
 
-    void setId(int id) {
-        mFaceId = id;
-    }
-
-
-    void setIsReady(boolean isValid) {
+    void updateFace(Face face, boolean isValid) {
+        this.mFace = face;
         this.mIsReady = isValid;
-        mPaint.setColor(isValid ? VALID_COLOR : INVALID_COLOR);
-    }
-
-
-    void updateFace(Face face) {
-        mFace = face;
         postInvalidate();
     }
 
@@ -64,8 +53,6 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         float x = translateX(face.getPosition().x + face.getWidth() / 2);
         float y = translateY(face.getPosition().y + face.getHeight() / 2);
 
-
-
         // Draws a bounding box around the face.
         float xOffset = scaleX(face.getWidth() / 2.0f);
         float yOffset = scaleY(face.getHeight() / 2.0f);
@@ -76,6 +63,7 @@ class FaceGraphic extends GraphicOverlay.Graphic {
 
         canvas.drawText(mIsReady ? mReadyMessage : mNotReadyMessage, left, top - LABEL_Y_OFFSET, mPaint);
 
+        mPaint.setColor(mIsReady ? VALID_COLOR : INVALID_COLOR);
         canvas.drawRect(left, top, right, bottom, mPaint);
     }
 }

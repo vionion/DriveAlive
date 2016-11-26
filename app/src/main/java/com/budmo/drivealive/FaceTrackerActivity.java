@@ -29,7 +29,7 @@ import com.google.android.gms.vision.face.FaceDetector;
 import java.io.IOException;
 
 public final class FaceTrackerActivity extends AppCompatActivity {
-    private static final String TAG = "FaceTracker";
+    private static final String TAG = "FaceTrackerActivity";
 
     private CameraSource mCameraSource = null;
 
@@ -90,7 +90,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         Context context = getApplicationContext();
         FaceDetector detector = new FaceDetector.Builder(context)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-                .setProminentFaceOnly(true)
+                .setProminentFaceOnly(false)
                 .build();
 
         detector.setProcessor(
@@ -195,44 +195,5 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         public Tracker<Face> create(Face face) {
             return new GraphicFaceTracker(mGraphicOverlay);
         }
-    }
-
-    private class GraphicFaceTracker extends Tracker<Face> {
-        private static final double EYE_CLOSED_THRESHOLD = 0.4;
-        private GraphicOverlay mOverlay;
-        private FaceGraphic mFaceGraphic;
-        private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
-
-        GraphicFaceTracker(GraphicOverlay overlay) {
-            mOverlay = overlay;
-            mFaceGraphic = new FaceGraphic(overlay);
-        }
-
-        @Override
-        public void onNewItem(int faceId, Face item) {
-            mFaceGraphic.setId(faceId);
-        }
-
-        @Override
-        public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
-            mOverlay.add(mFaceGraphic);
-            float leftEye = face.getIsLeftEyeOpenProbability();
-            float rightEye = face.getIsRightEyeOpenProbability();
-            if (leftEye < EYE_CLOSED_THRESHOLD && rightEye < EYE_CLOSED_THRESHOLD) {
-                toneG.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100); // 100 is duration in ms
-            }
-            mFaceGraphic.updateFace(face);
-        }
-
-        @Override
-        public void onMissing(FaceDetector.Detections<Face> detectionResults) {
-            mOverlay.remove(mFaceGraphic);
-        }
-
-        @Override
-        public void onDone() {
-            mOverlay.remove(mFaceGraphic);
-        }
-
     }
 }
