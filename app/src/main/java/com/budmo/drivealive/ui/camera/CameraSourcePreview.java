@@ -148,6 +148,9 @@ public class CameraSourcePreview extends ViewGroup {
         } catch (IOException e) {
             Log.e(TAG, "Could not start camera source.", e);
         }
+
+        this.getLayoutParams().height = childHeight;
+        this.getLayoutParams().width = childWidth;
     }
 
     private boolean isPortraitMode() {
