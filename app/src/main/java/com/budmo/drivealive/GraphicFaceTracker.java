@@ -15,16 +15,18 @@ public class GraphicFaceTracker extends Tracker<Face> {
     private static final String TAG = "FaceTracker";
     private static final double ONE_EYE_CLOSED_THRESHOLD = 0.4;
     private static final double BOTH_EYES_CLOSED_THRESHOLD = 1.2;
+    private static final long MINIMUM_BLINKING_INTERVAL = 4000;
 
     private static AtomicInteger faceNumber = new AtomicInteger(0);
 
     private GraphicOverlay mOverlay;
     private FaceGraphic mFaceGraphic;
-    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME);
+    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 30);
     private int faceId;
     private int sleepyFrames = 0;
     private int totalFrames = 0;
     private long startTime;
+    private long lastBlinkingTime = System.currentTimeMillis();
 
     GraphicFaceTracker(GraphicOverlay overlay) {
         mOverlay = overlay;
@@ -67,7 +69,14 @@ public class GraphicFaceTracker extends Tracker<Face> {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
                     mFaceGraphic.updateFaceFrame(face, false);
                     Log.w(TAG, "SLEEPY FRAMES: " + sleepyFrames);
+                } else if (sleepyFrames == 1) {
+                    long intervalFromLastBlinking = System.currentTimeMillis() - lastBlinkingTime;
+                    Log.w(TAG, "BLINKING INTERVAL: " + intervalFromLastBlinking);
+                    if (intervalFromLastBlinking < MINIMUM_BLINKING_INTERVAL) {
+                        Log.w(TAG, "TOO FREQUENT BLINKING INTERVALS: " + intervalFromLastBlinking);
+                    }
                 }
+                lastBlinkingTime = System.currentTimeMillis();
             } else {
                 mFaceGraphic.updateFaceFrame(face, true);
                 sleepyFrames = 0;
