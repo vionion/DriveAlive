@@ -13,13 +13,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class GraphicFaceTracker extends Tracker<Face> {
     private static final String TAG = "FaceTracker";
-    private static final double EYE_CLOSED_THRESHOLD = 0.4;
+    private static final double ONE_EYE_CLOSED_THRESHOLD = 0.4;
+    private static final double BOTH_EYES_CLOSED_THRESHOLD = 0.6;
+    private static int SLEEPY_FRAMES = 0;
+    private static int BLINKING_FRAMES = 180;
 
     private static AtomicInteger faceNumber = new AtomicInteger(0);
 
     private GraphicOverlay mOverlay;
     private FaceGraphic mFaceGraphic;
-    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 30);
+    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME);
+    private float leftEyeOpened;
+    private float rightEyeOpened;
     private int faceId;
 
     GraphicFaceTracker(GraphicOverlay overlay) {
@@ -38,16 +43,28 @@ public class GraphicFaceTracker extends Tracker<Face> {
     @Override
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
         mOverlay.add(mFaceGraphic);
-
         boolean oneFaceOnly = faceNumber.get() == 1;
         if (oneFaceOnly) {
-            float leftEye = face.getIsLeftEyeOpenProbability();
-            float rightEye = face.getIsRightEyeOpenProbability();
-            if (leftEye < EYE_CLOSED_THRESHOLD && rightEye < EYE_CLOSED_THRESHOLD) {
-                toneG.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100); // 100 is duration in ms
-                mFaceGraphic.updateFaceFrame(face, false);
+            leftEyeOpened = face.getIsLeftEyeOpenProbability();
+            rightEyeOpened = face.getIsRightEyeOpenProbability();
+            if ((leftEyeOpened < ONE_EYE_CLOSED_THRESHOLD && rightEyeOpened < ONE_EYE_CLOSED_THRESHOLD) || (leftEyeOpened + rightEyeOpened < BOTH_EYES_CLOSED_THRESHOLD)) {
+                SLEEPY_FRAMES++;
+                BLINKING_FRAMES -= 180;
+                if (SLEEPY_FRAMES > 3) {
+                    toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
+                    mFaceGraphic.updateFaceFrame(face, false);
+                }
+                if (BLINKING_FRAMES < 150) {
+                    // TODO: show notification
+                    toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
+                    mFaceGraphic.updateFaceFrame(face, false);
+                }
             } else {
                 mFaceGraphic.updateFaceFrame(face, true);
+                SLEEPY_FRAMES = 0;
+                if (BLINKING_FRAMES < 180) {
+                    BLINKING_FRAMES++;
+                }
             }
         } else {
             mFaceGraphic.updateFaceFrame(face, false);
