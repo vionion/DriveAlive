@@ -7,6 +7,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
@@ -15,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import com.budmo.drivealive.ui.camera.CameraSourcePreview;
 import com.budmo.drivealive.ui.camera.GraphicOverlay;
@@ -27,6 +30,8 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public final class FaceTrackerActivity extends AppCompatActivity {
     private static final String TAG = "FaceTrackerActivity";
@@ -35,6 +40,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
     private CameraSourcePreview mPreview;
     private GraphicOverlay mGraphicOverlay;
+    private TextView mStatusTextView;
 
     private static final int RC_HANDLE_GMS = 9001;
     // permission request codes need to be < 256
@@ -47,6 +53,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+        mStatusTextView = (TextView) findViewById(R.id.status);
 
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
@@ -56,6 +63,8 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         } else {
             requestCameraPermission();
         }
+
+        startStatusUpdateTask();
     }
 
     private void requestCameraPermission() {
@@ -90,7 +99,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         Context context = getApplicationContext();
         FaceDetector detector = new FaceDetector.Builder(context)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-                .setProminentFaceOnly(false)
+                .setProminentFaceOnly(true)
                 .build();
 
         detector.setProcessor(
@@ -188,6 +197,43 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                 mCameraSource = null;
             }
         }
+    }
+
+    private void startStatusUpdateTask() {
+        Timer timer = new Timer();
+
+        final Runnable statusUpdateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                String statusMessage;
+                int backgroundColor;
+                switch (GraphicFaceTracker.getFaceNumber()) {
+                    case 0:
+                        statusMessage = getResources().getString(R.string.status_no_people);
+                        backgroundColor = Color.DKGRAY;
+                        break;
+                    case 1:
+                        statusMessage = getResources().getString(R.string.status_fine);
+                        backgroundColor = Color.GREEN;
+                        break;
+                    default:
+                        statusMessage = getResources().getString(R.string.status_too_many_people);
+                        backgroundColor = Color.RED;
+                }
+
+                mStatusTextView.setBackgroundColor(backgroundColor);
+                mStatusTextView.setText(statusMessage);
+                mStatusTextView.setTypeface(null, Typeface.BOLD);
+            }
+        };
+
+        TimerTask doAsynchronousTask = new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(statusUpdateRunnable);
+            }
+        };
+        timer.schedule(doAsynchronousTask, 0, 100);
     }
 
     private class GraphicFaceTrackerFactory implements MultiProcessor.Factory<Face> {

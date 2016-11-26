@@ -3,6 +3,7 @@
     <string name="ok">OK</string>
     <string name="permission_camera_rationale">Access to the camera is needed for detection</string>
     <string name="no_camera_permission">This application cannot run because it does not have the camera permission.  The application will now exit.</string>
-    <string name="not_ready_message">Only one person should be in the camera</string>
-    <string name="ready_message">Great! We are tracking your eyes...</string>
+    <string name="status_no_people">Please, focus the camera on your face</string>
+    <string name="status_too_many_people">Only one person should be in the camera</string>
+    <string name="status_fine">Great! We are tracking your eyes…</string>
 </resources>

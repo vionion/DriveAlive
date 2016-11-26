@@ -21,10 +21,12 @@
     </com.budmo.drivealive.ui.camera.CameraSourcePreview>
 
     <TextView
+        android:id="@+id/status"
+        android:gravity="center"
+        android:textSize="20sp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/preview"
-        android:text="ВСЕ ЗАЕБИСЬ!"
         android:textColor="#FFF"/>
 
 </RelativeLayout>

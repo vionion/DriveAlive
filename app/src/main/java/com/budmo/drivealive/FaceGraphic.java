@@ -23,20 +23,16 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     private volatile Face mFace;
 
     private boolean mIsReady = false;
-    private final String mNotReadyMessage;
-    private final String mReadyMessage;
 
     FaceGraphic(GraphicOverlay overlay) {
         super(overlay);
-        mNotReadyMessage = overlay.getContext().getResources().getString(R.string.not_ready_message);
-        mReadyMessage = overlay.getContext().getResources().getString(R.string.ready_message);
         mPaint = new Paint();
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeWidth(BOX_STROKE_WIDTH);
         mPaint.setTextSize(ID_TEXT_SIZE);
     }
 
-    void updateFace(Face face, boolean isValid) {
+    void updateFaceFrame(Face face, boolean isValid) {
         this.mFace = face;
         this.mIsReady = isValid;
         postInvalidate();
@@ -60,8 +56,6 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         float top = y - yOffset;
         float right = x + xOffset;
         float bottom = y + yOffset;
-
-        canvas.drawText(mIsReady ? mReadyMessage : mNotReadyMessage, left, top - LABEL_Y_OFFSET, mPaint);
 
         mPaint.setColor(mIsReady ? VALID_COLOR : INVALID_COLOR);
         canvas.drawRect(left, top, right, bottom, mPaint);

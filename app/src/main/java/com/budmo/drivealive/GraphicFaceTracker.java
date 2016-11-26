@@ -30,33 +30,48 @@ public class GraphicFaceTracker extends Tracker<Face> {
     @Override
     public void onNewItem(int faceId, Face item) {
         Log.w(TAG, "TRACKER: NEW FACE " + faceId);
-        Log.w(TAG, "NUMBER OF FACES " + faceNumber.incrementAndGet());
+        faceNumber.incrementAndGet();
+        Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         this.faceId = faceId;
     }
 
     @Override
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
         mOverlay.add(mFaceGraphic);
-        float leftEye = face.getIsLeftEyeOpenProbability();
-        float rightEye = face.getIsRightEyeOpenProbability();
-        if (leftEye < EYE_CLOSED_THRESHOLD && rightEye < EYE_CLOSED_THRESHOLD) {
-            toneG.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100); // 100 is duration in ms
+
+        boolean oneFaceOnly = faceNumber.get() == 1;
+        if (oneFaceOnly) {
+            float leftEye = face.getIsLeftEyeOpenProbability();
+            float rightEye = face.getIsRightEyeOpenProbability();
+            if (leftEye < EYE_CLOSED_THRESHOLD && rightEye < EYE_CLOSED_THRESHOLD) {
+                toneG.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100); // 100 is duration in ms
+                mFaceGraphic.updateFaceFrame(face, false);
+            } else {
+                mFaceGraphic.updateFaceFrame(face, true);
+            }
+        } else {
+            mFaceGraphic.updateFaceFrame(face, false);
         }
-        mFaceGraphic.updateFace(face, faceNumber.get() == 1);
     }
 
     @Override
     public void onMissing(FaceDetector.Detections<Face> detectionResults) {
         Log.w(TAG,"TRACKER: MISSING FACE " + faceId);
-        Log.w(TAG, "NUMBER OF FACES " + faceNumber.decrementAndGet());
+        faceNumber.decrementAndGet();
+        Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         mOverlay.remove(mFaceGraphic);
     }
 
     @Override
     public void onDone() {
         Log.w(TAG,"TRACKER: REMOVED FACE " + faceId);
-        Log.w(TAG, "NUMBER OF FACES " + faceNumber.decrementAndGet());
+        faceNumber.decrementAndGet();
+        Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         mOverlay.remove(mFaceGraphic);
+    }
+
+    public static int getFaceNumber() {
+        return GraphicFaceTracker.faceNumber.get();
     }
 
 }
