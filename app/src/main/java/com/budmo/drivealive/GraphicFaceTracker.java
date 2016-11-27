@@ -30,7 +30,7 @@ public class GraphicFaceTracker extends Tracker<Face> {
 
     private GraphicOverlay mOverlay;
     private FaceGraphic mFaceGraphic;
-    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 30);
+    private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
     private int faceId;
     private int totalFrames = 0;
     private long startTime;
@@ -86,6 +86,7 @@ public class GraphicFaceTracker extends Tracker<Face> {
                 } else if ((System.currentTimeMillis() - lastBlinkingStartTime) > MAX_CLOSED_EYES_INTERVAL) {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
                     validFrame = false;
+                    lastBlinkingStartTimes.clear();
                 }
             } else {
                 validFrame = true;
