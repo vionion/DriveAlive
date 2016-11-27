@@ -48,6 +48,7 @@ public class GraphicFaceTracker extends Tracker<Face> {
         faceNumber.incrementAndGet();
         Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         this.faceId = faceId;
+        lastBlinkingStartTimes.clear();
     }
 
     @Override
@@ -85,16 +86,18 @@ public class GraphicFaceTracker extends Tracker<Face> {
                 } else if ((System.currentTimeMillis() - lastBlinkingStartTime) > MAX_CLOSED_EYES_INTERVAL) {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
                     validFrame = false;
-                } else if (lastBlinkingStartTimes.size() >= MIN_BLINKING_COUNT && (System.currentTimeMillis() - lastBlinkingStartTimes.get((int) (lastBlinkingStartTimes.size() - MIN_BLINKING_COUNT))) < MIN_BLINKING_INTERVAL) {
+                }
+            } else {
+                validFrame = true;
+                lastBlinkingStartTime = -1;
+
+                if (lastBlinkingStartTimes.size() >= MIN_BLINKING_COUNT && (System.currentTimeMillis() - lastBlinkingStartTimes.get((int) (lastBlinkingStartTimes.size() - MIN_BLINKING_COUNT))) < MIN_BLINKING_INTERVAL) {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
                     blinkingTooFast.set(true);
                     blinkingTooFastSetTime.set(System.currentTimeMillis());
                     validFrame = false;
                     lastBlinkingStartTimes.clear();
                 }
-            } else {
-                validFrame = true;
-                lastBlinkingStartTime = -1;
             }
 
             mFaceGraphic.updateFaceFrame(face, validFrame);
@@ -109,6 +112,7 @@ public class GraphicFaceTracker extends Tracker<Face> {
         faceNumber.decrementAndGet();
         Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         mOverlay.remove(mFaceGraphic);
+        lastBlinkingStartTimes.clear();
     }
 
     @Override
@@ -117,6 +121,7 @@ public class GraphicFaceTracker extends Tracker<Face> {
         faceNumber.decrementAndGet();
         Log.w(TAG, "NUMBER OF FACES " + faceNumber.get());
         mOverlay.remove(mFaceGraphic);
+        lastBlinkingStartTimes.clear();
     }
 
     public static int getFaceNumber() {
