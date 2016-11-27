@@ -9,13 +9,17 @@ import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GraphicFaceTracker extends Tracker<Face> {
     private static final String TAG = "FaceTracker";
     private static final double ONE_EYE_CLOSED_THRESHOLD = 0.4;
     private static final double BOTH_EYES_CLOSED_THRESHOLD = 1.2;
-    private static final long MINIMUM_BLINKING_INTERVAL = 4000;
+    private static final long MINIMUM_CLOSED_EYES_INTERVAL = 300;
+    private static final long MINIMUM_BLINKING_INTERVAL = 8000;
+    private static final long MINIMUM_BLINKING_COUNT = 3;
 
     private static AtomicInteger faceNumber = new AtomicInteger(0);
 
@@ -23,10 +27,10 @@ public class GraphicFaceTracker extends Tracker<Face> {
     private FaceGraphic mFaceGraphic;
     private ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, 30);
     private int faceId;
-    private int sleepyFrames = 0;
     private int totalFrames = 0;
     private long startTime;
-    private long lastBlinkingTime = System.currentTimeMillis();
+    private List<Long> lastBlinkingStartTimes = new ArrayList<>();
+    private long lastBlinkingStartTime = -1;
 
     GraphicFaceTracker(GraphicOverlay overlay) {
         mOverlay = overlay;
@@ -58,29 +62,26 @@ public class GraphicFaceTracker extends Tracker<Face> {
         if (oneFaceOnly) {
             float leftEyeOpened = face.getIsLeftEyeOpenProbability();
             float rightEyeOpened = face.getIsRightEyeOpenProbability();
+            boolean validFrame = true;
 
             if (totalFrames % 10 == 0) {
                 Log.i(TAG, "PROBABILITY OF OPEN EYES: " + leftEyeOpened + " " + rightEyeOpened);
             }
 
             if ((leftEyeOpened < ONE_EYE_CLOSED_THRESHOLD && rightEyeOpened < ONE_EYE_CLOSED_THRESHOLD) || (leftEyeOpened + rightEyeOpened < BOTH_EYES_CLOSED_THRESHOLD)) {
-                sleepyFrames++;
-                if (sleepyFrames > 3) {
+                if (lastBlinkingStartTime == -1) {
+                    lastBlinkingStartTime = System.currentTimeMillis();
+                    validFrame = true;
+                } else if (System.currentTimeMillis() - lastBlinkingStartTime > MINIMUM_CLOSED_EYES_INTERVAL) {
                     toneG.startTone(ToneGenerator.TONE_CDMA_HIGH_PBX_SLS, 100); // 100 is duration in ms
-                    mFaceGraphic.updateFaceFrame(face, false);
-                    Log.w(TAG, "SLEEPY FRAMES: " + sleepyFrames);
-                } else if (sleepyFrames == 1) {
-                    long intervalFromLastBlinking = System.currentTimeMillis() - lastBlinkingTime;
-                    Log.w(TAG, "BLINKING INTERVAL: " + intervalFromLastBlinking);
-                    if (intervalFromLastBlinking < MINIMUM_BLINKING_INTERVAL) {
-                        Log.w(TAG, "TOO FREQUENT BLINKING INTERVALS: " + intervalFromLastBlinking);
-                    }
+                    validFrame = false;
                 }
-                lastBlinkingTime = System.currentTimeMillis();
             } else {
-                mFaceGraphic.updateFaceFrame(face, true);
-                sleepyFrames = 0;
+                validFrame = true;
+                lastBlinkingStartTime = -1;
             }
+
+            mFaceGraphic.updateFaceFrame(face, validFrame);
         } else {
             mFaceGraphic.updateFaceFrame(face, false);
         }
