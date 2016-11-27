@@ -12,7 +12,6 @@ import com.budmo.drivealive.ui.camera.GraphicOverlay;
 
 class FaceGraphic extends GraphicOverlay.Graphic {
     private static final float ID_TEXT_SIZE = 60.0f;
-    private static final float LABEL_Y_OFFSET = 50.0f;
     private static final float BOX_STROKE_WIDTH = 5.0f;
 
     private static final int VALID_COLOR = Color.GREEN;
