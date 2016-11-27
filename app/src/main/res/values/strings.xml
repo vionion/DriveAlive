@@ -6,4 +6,5 @@
     <string name="status_no_people">Please, focus the camera on your face</string>
     <string name="status_too_many_people">Only one person should be in the camera</string>
     <string name="status_fine">Great! We are tracking your eyes…</string>
+    <string name="status_tired">WARNING! You are blinking too frequently. Consider stopping and taking a quick nap for 15–20 mins.</string>
 </resources>

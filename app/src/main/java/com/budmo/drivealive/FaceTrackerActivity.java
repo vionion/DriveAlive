@@ -213,8 +213,13 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                         backgroundColor = Color.DKGRAY;
                         break;
                     case 1:
-                        statusMessage = getResources().getString(R.string.status_fine);
-                        backgroundColor = Color.GREEN;
+                        if (!GraphicFaceTracker.isBlinkingTooFast()) {
+                            statusMessage = getResources().getString(R.string.status_fine);
+                            backgroundColor = Color.GREEN;
+                        } else {
+                            statusMessage = getResources().getString(R.string.status_tired);
+                            backgroundColor = Color.BLUE;
+                        }
                         break;
                     default:
                         statusMessage = getResources().getString(R.string.status_too_many_people);
